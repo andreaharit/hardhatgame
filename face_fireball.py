@@ -9,6 +9,20 @@ import pygame
 import sys
 
 
+
+
+def debug_box_face (debug = False):
+        if debug:
+            # Draw box and recognition score for debug
+            cvzone.putTextRect(img, f'{score_face_rec}%', (x, y + h + 50))
+            cvzone.cornerRect(img, (x, y, w, h))  
+
+def resetFireBall():
+    # Restart the fireball if there was a collision
+    rectFireBall.x = random.randint(100, img.shape[1] - 100) # Random place between 100 and shape - 100 to not get the borders
+    rectFireBall.y = 0 # Starts at the top
+
+
 # Initialize game
 pygame.init()
 
@@ -18,23 +32,30 @@ speed = 10
 speedIncrement = 0
 score = 0
 startTime = time.time() # starts time countdown
-totalTime = 50
+totalTime = 43
+debug = True
 
 # For camera/game window
-width, height = 1280, 720
+#width, height = 1280, 720 # Full screen
+width, height = 800, 600
 
 # Starts the game window
 window = pygame.display.set_mode((width, height))
+
+# Title and logo of the window
 pygame.display.set_caption("Arcelor Hat Game")
+icon = pygame.image.load('./Resources/arcelor_logo.png')
+pygame.display.set_icon(icon)
 
 # Initialize Clock for FPS
 fps = 30
 clock = pygame.time.Clock()
 
-# Initialize the webcam
-cap = cv2.VideoCapture(0)
+# Initialize the webcam, capt_dshow makes it quickier to open
+cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 cap.set(3, width)  # 3 is an id for the property to set width
 cap.set(4, height)  # 4 is an id for a property to set height
+
 
 
 # Loading Images
@@ -53,16 +74,13 @@ ratio_h_w_png = h_png / w_png
 # Use MdelSelection: 0 for short-range detection (2 meters), 1 for long-range detection (5 meters)
 detector = FaceDetector(minDetectionCon=0.5, modelSelection=1)
 
-def resetFireBall():
-    rectFireBall.x = random.randint(100, img.shape[1] - 100) # Random place between 100 and shape - 100 to not get the borders
-    rectFireBall.y = 0 # Starts at the top
 
 # Starts the main loop for game and capture
 start = True
 while start:
     # Get Events
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if event.type == pygame.QUIT: # if user clicked the close window, stop the game
             start = False
             pygame.quit()
  
@@ -82,7 +100,7 @@ while start:
         if rectFireBall.y > height:
             resetFireBall()
             speed += speedIncrement
-
+        # if a face is detected!
         if bboxs:
             for bbox in bboxs:
                 # Get face coordinates
@@ -91,9 +109,7 @@ while start:
                 score_face_rec = int(bbox['score'][0] * 100)
 
                 # Draw box and recognition score for debug
-                cv2.circle(img, center, 5, (255, 0, 255), cv2.FILLED)
-                cvzone.putTextRect(img, f'{score_face_rec}%', (x, y + h + 50))
-                cvzone.cornerRect(img, (x, y, w, h))    
+                debug_box_face (debug = debug)
 
 
                 # Set hardhat size                
@@ -128,10 +144,10 @@ while start:
 
             # Prints time and score in the window
             font = pygame.font.Font('./Resources/Marcellus-Regular.ttf', 50)
-            textScore = font.render(f'Score: {score}', True, (50, 50, 255))
-            textTime = font.render(f'Time: {timeRemain}', True, (50, 50, 255))
-            window.blit(textScore, (35, 35))
-            window.blit(textTime, (1000, 35))
+            textScore = font.render(f'Score: {score}', True, (50, 50, 255)) # text, antialias, color
+            textTime = font.render(f'Time: {timeRemain}', True, (50, 50, 255)) 
+            window.blit(textScore, (35, 35)) # what to display, (x,y) coordinates in the window
+            window.blit(textTime, (width - 230, 35))
         
         cv2.waitKey(1) # continuously display frame without needing a button
         # Update Display

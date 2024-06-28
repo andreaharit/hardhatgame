@@ -197,8 +197,6 @@ if hat_dectected:
             # Set FPS
             clock.tick(fps)
 
-# Make a pause buttom
-# Make a restart buttom
 # Put another 3 types of things falling
 # Record the score for each thingy
 # Use the score of the biggest one to get a video of a training

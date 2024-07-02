@@ -1,0 +1,4 @@
+cvzone
+python3-opencv
+pygame
+mediapipe

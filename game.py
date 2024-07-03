@@ -16,8 +16,15 @@ DEBUG = False  # Do you want to see the bbox of face detection with the detectio
 GAME_TIME = 20  # Seconds to be played
 CAMERA_DELAY = 1  # Delay correction for camera starting
 TOTAL_TIME = GAME_TIME + CAMERA_DELAY
-FIREBALL_SPEED = 12  # How fast the fireball goes down
+FIREBALL_SPEED = 15  # How fast the fireball goes down
+SCALE = 0.6  # Scale (float), to scale the size of the fireball up or down
+SCORE_LIMIT = 10  # If score <= this one, display first video, if > then the other video
 COLOR_LETTERS = (255, 56, 1)  # Color of the score and time letters
+BACKGROUND_BOXES = (
+    255,
+    255,
+    255,
+)  # Color for the background boxes of the score and time
 
 # Camera and window variables
 FPS = 30  # FPS for the game
@@ -40,9 +47,10 @@ VIDEO_RESOURCES_DIR = ROOT / "Resources/Videos"
 IMG_ICON = GAME_RESOURCES_DIR / "arcelor_logo.png"
 IMG_HARDHAT = GAME_RESOURCES_DIR / "hardhat.png"
 FONT = GAME_RESOURCES_DIR / "VAG-Rounded-Regular.ttf"
+
 VIDEOS = {
-    1: VIDEO_RESOURCES_DIR / "1-Comora.mp4",
-    2: VIDEO_RESOURCES_DIR / "6-Guaranteed.mp4",
+    0: VIDEO_RESOURCES_DIR / "1-Comora.mp4",
+    1: VIDEO_RESOURCES_DIR / "6-Guaranteed.mp4",
 }
 
 # Game categories for the image of the fireball
@@ -79,7 +87,7 @@ class Game:
         fps = FPS
         clock = pygame.time.Clock()
 
-        # Initializes the webcam
+        # Initializes the webcam cv2.CAP_DSHOW is makes video capture quicker
         cap = cv2.VideoCapture(CAMERA_NUMBER, cv2.CAP_DSHOW)
         cap.set(3, SCREEN_WIDTH)
         cap.set(4, SCREEN_HEIGHT)
@@ -87,6 +95,7 @@ class Game:
         # Loads images and gets their box coordinates
         # FireBall
         img_fireball = pygame.image.load(fireball).convert_alpha()
+        img_fireball = pygame.transform.scale_by(img_fireball, SCALE)
         rect_fireball = img_fireball.get_rect()
 
         # Hardhat
@@ -222,10 +231,11 @@ class Game:
         self.missed = missed
         self.total = total
 
-    def debug_box_face(self, img, score_face_rec, x, y, h, w):
+    def debug_box_face(self, img, score_face_rec, x, y, h, w) -> None:
         """
         Draw around the face a box and recognition score for debug.
         """
+
         if DEBUG:
             cvzone.putTextRect(img, f"{score_face_rec}%", (x, y + h + 50))
             cvzone.cornerRect(img, (x, y, w, h))
@@ -238,26 +248,57 @@ class Game:
         rect_fireball_y = 0
         return rect_fireball_x, rect_fireball_y
 
-    def display_score(self, font, score, total):
+    def display_score(self, font, score: int, total: int) -> None:
         """
         Displays score.
         """
         textScore = font.render(
             f"Score: {score} of {total}", True, COLOR_LETTERS
         )  # text, antialias, color
+
+        score_rect = textScore.get_rect(topleft=(35, 35))
+        self.draw_box(score_rect)
+
         self.window.blit(
             textScore, (35, 35)
         )  # what to display, (x,y) coordinates in the window
 
-    def display_time(self, font, time_remain, pause):
+    def display_time(self, font, time_remain: int, pause: bool):
         """
         Displays time count.
         """
         if pause == False:
             textTime = font.render(f"Time: {time_remain}", True, COLOR_LETTERS)
+
         else:
             textTime = font.render(f"Pause: {time_remain}", True, COLOR_LETTERS)
+
+        time_rec = textTime.get_rect(topleft=(SCREEN_WIDTH - 230, 35))
+
+        self.draw_box(time_rec)
         self.window.blit(textTime, (SCREEN_WIDTH - 230, 35))
+
+    def draw_box(self, text_rect) -> None:
+        """
+        Generate a filled in box behind. Used to make the score and time count prettier.
+        Params:
+        - text_rect: coordinates of the box around the text that will be inside the box.
+        """
+        # Padding
+        padding = 10
+        # Calculates background rectangle dimensions
+        rect_width = text_rect.width + padding * 2
+        rect_height = text_rect.height + padding * 2
+        rect_x = text_rect.x - padding
+        rect_y = text_rect.y - padding
+
+        # Draws the box
+        pygame.draw.rect(
+            self.window,
+            BACKGROUND_BOXES,
+            (rect_x, rect_y, rect_width, rect_height),
+            border_radius=10,
+        )
 
 
 class Play_Video:
@@ -267,7 +308,7 @@ class Play_Video:
     - video (path): video to be played after the game.
     """
 
-    def __init__(self, video):
+    def __init__(self, video) -> None:
 
         cap = cv2.VideoCapture(video)
         window_name = "video"
@@ -290,7 +331,7 @@ class Play_Video:
         cv2.destroyAllWindows()
 
 
-def game_video(category, has_hardhat=False):
+def game_video(category: str, has_hardhat: bool = False) -> None:
     """
     Main function that wraps up the game and the video play.
     Params:
@@ -307,11 +348,11 @@ def game_video(category, has_hardhat=False):
 
         game = Game(fireball=fireball)  # Starts the game
         score = game.final_score
-        # Selects the video based on the score since we don't have videos based on job postins yet
-        if score >= 150:
-            video = VIDEOS[1]
+        # Selects the video based on the score since we don't have videos based on job postings yet
+        if score <= SCORE_LIMIT:
+            video = VIDEOS[0]
         else:
-            video = VIDEOS[2]
+            video = VIDEOS[1]
 
         # Plays the video
         playing = Play_Video(video=video)

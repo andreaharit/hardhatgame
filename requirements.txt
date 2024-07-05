@@ -1,4 +1,4 @@
 cvzone
-python3-opencv
+opencv-python
 pygame
 mediapipe

@@ -13,10 +13,10 @@ from pathlib import Path
 DEBUG = False  # Do you want to see the bbox of face detection with the detection score?
 
 # Game variables
-GAME_TIME = 20  # Seconds to be played
+GAME_TIME = 5  # Seconds to be played
 CAMERA_DELAY = 1  # Delay correction for camera starting
 TOTAL_TIME = GAME_TIME + CAMERA_DELAY
-FIREBALL_SPEED = 15  # How fast the fireball goes down
+FIREBALL_SPEED = 10  # How fast the fireball goes down
 SCALE = 0.6  # Scale (float), to scale the size of the fireball up or down
 SCORE_LIMIT = 10  # If score <= this one, display first video, if > then the other video
 COLOR_LETTERS = (255, 56, 1)  # Color of the score and time letters
@@ -28,13 +28,14 @@ BACKGROUND_BOXES = (
 
 # Camera and window variables
 FPS = 30  # FPS for the game
-# Size of windows to be opened. Use 1280, 720 for a full screen
+# Size of windows to be opened. Use 1280, 720 for a full screen. 800, 600 for tests
+FULL_SCREEN = True
 SCREEN_WIDTH, SCREEN_HEIGHT = (
-    800,
-    600,
+    1280,
+    660,
 )
 CAMERA_NUMBER = 0  # Set 0 is the webcam, others might be another number
-CAMERA_RANGE = 0  # Set 0 for if person is close to camera, 1 if far
+CAMERA_RANGE = 1  # Set 0 for if person is close to camera, 1 if far
 
 # File paths
 ROOT = Path(__file__).parent
@@ -313,6 +314,7 @@ class Play_Video:
         cap = cv2.VideoCapture(video)
         window_name = "video"
         cv2.namedWindow(window_name)
+        cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_NORMAL)
 
         while cap.isOpened():
             ret, frame = cap.read()  # Captures video frames
@@ -359,8 +361,8 @@ def game_video(category: str, has_hardhat: bool = False) -> None:
 
 
 if __name__ == "__main__":
-
-    has_hardhat = True
-    category = "ITlkj"
+    # Variables that come from integration with other solutions
+    has_hardhat = True # Did the YOLO model detected the hardhat? (will the game start?)
+    category = "IT" # What job category the LLM passed foward (which icon will fall?)
 
     game_video(category=category, has_hardhat=has_hardhat)
